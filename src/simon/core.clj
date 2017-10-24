@@ -1,6 +1,7 @@
 (ns simon.core
   (:require [quil.core :as q]
-            [quil.middleware :as m]))
+            [quil.middleware :as m]
+            [taoensso.timbre :as log]))
 
 (defn setup []
   ; Set frame rate to 30 frames per second.
