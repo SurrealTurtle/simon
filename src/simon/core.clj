@@ -45,6 +45,12 @@
       ; Draw the circle.
       (q/ellipse x y 100 100))))
 
+
+(defn button-clicked [state event]
+  (log/info "GOT HERE" event)
+  (clojure.pprint/pprint "lalalla")
+  state)
+
 (q/defsketch simon
   :title "Simon says..."
   :size [500 500]
@@ -54,6 +60,7 @@
   ;:update update-state
   :draw draw-state
   :features [:keep-on-top :no-bind-output]
+  :mouse-clicked button-clicked
   ; This sketch uses functional-mode middleware.
   ; Check quil wiki for more info about middlewares and particularly
   ; fun-mode.
