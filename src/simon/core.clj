@@ -7,7 +7,7 @@
   ; Set frame rate to 30 frames per second.
   #_(q/frame-rate 30)
   ; Set color mode to HSB (HSV) instead of default RGB.
-  (q/color-mode :hsb)
+  #_(q/color-mode :hsb)
   ; setup function returns initial state. It contains
   ; circle color and position.
   {:color 0
