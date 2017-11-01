@@ -3,6 +3,13 @@
             [quil.middleware :as m]
             [taoensso.timbre :as log]))
 
+(defonce colors {:red [255 0 0]
+                 :green [0 255 0]
+                 :yellow [255 255 0]
+                 :blue [0 0 255]})
+
+(defonce edge 120)
+
 (defn setup []
   ; Set frame rate to 30 frames per second.
   #_(q/frame-rate 30)
@@ -24,26 +31,17 @@
   (q/background 240)
 
   ;; Set circle color.
-  (q/fill 255 0 0)
-  (q/rect 10 10 100 100)
+  (apply q/fill (:red colors))
+  (q/rect 10 10 edge edge)
 
-  (q/fill 0 255 0)
-  (q/rect 200 10 100 100)
+  (apply q/fill (:yellow colors))
+  (q/rect 300 10 edge edge)
 
-  (q/fill 0 0 255)
-  (q/rect 10 200 100 100)
+  (apply q/fill (:blue colors))
+  (q/rect 10 300 edge edge)
 
-  (q/fill 255 255 0)
-  (q/rect 200 200 100 100)
-  ; Calculate x and y coordinates of the circle.
-  #_(let [angle (:angle state)
-        x (* 150 (q/cos angle))
-        y (* 150 (q/sin angle))]
-    ; Move origin point to the center of the sketch.
-    (q/with-translation [(/ (q/width) 2)
-                         (/ (q/height) 2)]
-      ; Draw the circle.
-      (q/ellipse x y 100 100))))
+  (apply q/fill (:green colors))
+  (q/rect 300 300 edge edge))
 
 
 (defn button-clicked [state event]
