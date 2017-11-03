@@ -4,22 +4,23 @@
             [taoensso.timbre :as log]
             [clojure.math.combinatorics :as combo]))
 
-(defonce basic-colors {:red [255 0 0]
-                       :green [0 255 0]
-                       :yellow [255 255 0]
-                       :blue [0 0 255]})
+(def basic-colors {:red [255 0 0]
+                   :green [0 255 0]
+                   :yellow [255 255 0]
+                   :blue [0 0 255]})
 
-(defonce secondary-colors {:red [255 127 80]
-                           :green [127 255 0]
-                           :yellow [255 255 200]
-                           :blue [0 191 255]})
+(def secondary-colors {:red [255 127 80]
+                       :green [152 251 152]
+                       :yellow [255 255 150]
+                       :blue [0 191 255]})
 
-(def edge 120)
+(defonce edge 120)
 
 (defonce start-points {:red [10 10]
                        :green [300 300]
                        :yellow [300 10]
                        :blue [10 300]})
+(def period 2)
 
 (defn- populate-color-points [start-points edge color]
   (let [x (-> start-points color first)
@@ -40,13 +41,9 @@
                   (recur (first colors)
                          (next colors))))))
 
-(defn- dim-color [color]
-  ;; Returns dimed coordinates
-  )
-
 (defn setup []
   ; Set frame rate to 30 frames per second.
-  (q/frame-rate 1)
+  (q/frame-rate 4)
 
   ; Set color mode to HSB (HSV) instead of default RGB.
   #_(q/color-mode :hsb)
@@ -56,16 +53,20 @@
    :button-points {:red (populate-color-points start-points edge :red)
                    :green (populate-color-points start-points edge :green)
                    :yellow (populate-color-points start-points edge :yellow)
-                   :blue (populate-color-points start-points edge :blue)}})
+                   :blue (populate-color-points start-points edge :blue)}
+   :currenct-series []
+   :high-score 0
+   :counter period})
 
 (defn update-state [state]
-  (log/info "GOT HERE")
   (log/info "Updated colors " (:colors state))
 
-  state
-  ; Update sketch state by changing circle color and position.
-  #_{:color (mod (+ (:color state) 0.7) 255)
-   :angle (+ (:angle state) 0.1)})
+  ;; Colors back to basic so we get blink effect
+  (if (zero? (:counter state))
+    (assoc state
+           :colors basic-colors
+           :counter period)
+    (update state :counter dec)))
 
 (defn draw-state [state]
   (log/info "DRAWWWW")
@@ -92,8 +93,11 @@
                              (:x event)
                              (:y event))]
     (log/info "Color: " color)
+    ;; TODO: compare to series continue or abort
     (if color
-      (assoc-in state [:colors color] (color secondary-colors))
+      (-> state
+          (assoc-in [:colors color] (color secondary-colors))
+          (assoc :counter period))
       state)))
 
 (q/defsketch simon
