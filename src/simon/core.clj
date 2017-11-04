@@ -21,6 +21,7 @@
                        :yellow [300 10]
                        :blue [10 300]})
 (def period 2)
+(defonce high-score (atom 0))
 
 (defn- populate-color-points [start-points edge color]
   (let [x (-> start-points color first)
@@ -41,40 +42,76 @@
                   (recur (first colors)
                          (next colors))))))
 
-(defn setup []
-  ; Set frame rate to 30 frames per second.
-  (q/frame-rate 4)
+(defn- animate [state color]
+  (-> state
+      (assoc-in [:colors color] (color secondary-colors))
+      (assoc :counter period)))
 
-  ; Set color mode to HSB (HSV) instead of default RGB.
-  #_(q/color-mode :hsb)
-  ; setup function returns initial state. It contains
-  ; circle color and position.
-  {:colors basic-colors
-   :button-points {:red (populate-color-points start-points edge :red)
-                   :green (populate-color-points start-points edge :green)
-                   :yellow (populate-color-points start-points edge :yellow)
-                   :blue (populate-color-points start-points edge :blue)}
-   :currenct-series []
-   :high-score 0
-   :counter period})
-
-(defn update-state [state]
-  (log/info "Updated colors " (:colors state))
-
-  ;; Colors back to basic so we get blink effect
+(defn- reset [state]
+  "Colors back to basic so we get blink effect"
   (if (zero? (:counter state))
     (assoc state
            :colors basic-colors
            :counter period)
     (update state :counter dec)))
 
+(defn- random-color [color-list]
+  (nth color-list (rand-int (count color-list))))
+
+(defn- random-color-seq [color-list n]
+  (for [x (range n)]
+    (random-color color-list)))
+
+(defn- produce-colors [state]
+  (if (= (:n state) (:score state))
+    (let [n (inc (:n state))]
+      (-> state
+          (assoc :n n)
+          (assoc :current-series (random-color-seq (keys (:colors state)) n))))
+    state))
+
+(defn- display-color [state]
+  (let [next-color (:next-color state)
+        current-series (:current-series state)]
+    (if (and (log/spy (> (:n state) (:score state)))
+             (< next-color (count current-series)))
+      (-> state
+          (update :next-color inc)
+          (animate-button (nth current-series next-color)))
+      state)))
+
+(defn setup []
+  ; Set frame rate to 4 frames per second.
+  (q/frame-rate 4)
+  
+  {:colors basic-colors
+   :button-points {:red (populate-color-points start-points edge :red)
+                   :green (populate-color-points start-points edge :green)
+                   :yellow (populate-color-points start-points edge :yellow)
+                   :blue (populate-color-points start-points edge :blue)}
+   :currenct-series []
+   :next-color 0
+   :score 0
+   :n 0
+   :counter period})
+
+(defn update-state [state]
+  #_(log/info "Updated colors " (:colors state))
+
+  (log/info "coor ser " (count (:current-series state)))
+  
+  (-> state
+      produce-colors
+      display-color
+      reset))
+
 (defn draw-state [state]
-  (log/info "DRAWWWW")
-  ; Clear the sketch by filling it with light-grey color.
+  #_(log/info "DRAWWWW")
+
+  ;; Clear the sketch by filling it with light-grey color.
   (q/background 240)
 
-  ;; Set circle color.
-  (apply q/fill (log/spy (:red (:colors state))))
+  (apply q/fill (:red (:colors state)))
   (q/rect (first (:red start-points)) (second (:red start-points)) edge edge)
 
   (apply q/fill (:yellow (:colors state)))
@@ -84,20 +121,22 @@
   (q/rect (first (:blue start-points)) (second (:blue start-points)) edge edge)
 
   (apply q/fill (:green (:colors state)))
-  (q/rect (first (:green start-points)) (second (:green start-points)) edge edge))
+  (q/rect (first (:green start-points)) (second (:green start-points)) edge edge)
+
+  (q/fill 0 0 0)
+  (q/text (str "Score: " (:score state)) 200 220)
+  (q/text (str "High Score: " @high-score) 200 250))
 
 
 (defn button-clicked [state event]
-  (log/info "CLICKED AT" event)
+  #_(log/info "CLICKED AT" event)
   (let [color (point->button (:button-points state)
                              (:x event)
                              (:y event))]
-    (log/info "Color: " color)
+    #_(log/info "Color: " color)
     ;; TODO: compare to series continue or abort
     (if color
-      (-> state
-          (assoc-in [:colors color] (color secondary-colors))
-          (assoc :counter period))
+      (animate-button state color)
       state)))
 
 (q/defsketch simon
