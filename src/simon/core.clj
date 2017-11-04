@@ -73,12 +73,41 @@
 (defn- display-color [state]
   (let [next-color (:next-color state)
         current-series (:current-series state)]
-    (if (and (log/spy (> (:n state) (:score state)))
+    (if (and (> (:n state) (:score state))
              (< next-color (count current-series)))
       (-> state
           (update :next-color inc)
-          (animate-button (nth current-series next-color)))
+          (animate-button (nth current-series (log/spy next-color))))
       state)))
+
+(defn- reset-round [state]
+  (-> state
+      (assoc :current-series [])
+      (update :n dec)
+      (assoc :next-color 0)
+      (assoc :next-input 0)))
+
+(defn- maybe-update-high-score [score]
+  (when (< @high-score score)
+    (reset! high-score score)))
+
+(defn- won-round? [state]
+  (if (and (not-empty (:current-series state))
+           (= (count (:current-series state))
+              (:next-input state)))
+    (let [new-score (inc (:score state))]
+      (maybe-update-high-score new-score)
+      (-> state
+          (assoc :score new-score)
+          (assoc :current-series [])
+          (assoc :next-color 0)
+          (assoc :next-input 0)))
+    state))
+
+(defn- correct-input? [state color]
+  (if (= color (nth (:current-series state) (log/spy (:next-input state))))
+    (update state :next-input inc)
+    (reset-round state)))
 
 (defn setup []
   ; Set frame rate to 4 frames per second.
@@ -91,6 +120,7 @@
                    :blue (populate-color-points start-points edge :blue)}
    :currenct-series []
    :next-color 0
+   :next-input 0
    :score 0
    :n 0
    :counter period})
@@ -136,7 +166,10 @@
     #_(log/info "Color: " color)
     ;; TODO: compare to series continue or abort
     (if color
-      (animate-button state color)
+      (-> state
+          (correct-input? color)
+          (won-round?)
+          (animate-button color))
       state)))
 
 (q/defsketch simon
